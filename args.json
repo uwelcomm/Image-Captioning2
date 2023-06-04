@@ -1,0 +1,1 @@
+{"config": "./configs/caption_coco.yaml", "output_dir": "output/Caption_coco", "evaluate": true, "device": "cuda", "seed": 42, "world_size": 1, "dist_url": "env://", "distributed": false}
