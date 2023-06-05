@@ -1,8 +1,36 @@
 
-from models.blip import blip_decoder
 import torch
 import pytorch_lightning as pl
 import json
+
+import torch 
+from torchvision.datasets.utils import download_url
+from models.blip import blip_decoder
+from models.vit import interpolate_pos_embed
+from data.utils import save_result, coco_caption_eval
+
+def init_model_vit_and_embedding(model=None):
+    download_url('https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth','./')
+    chpt=torch.load('model_base_capfilt_large.pth',map_location='cpu')
+    visual_encoder_dict={}
+    embeddings_dict={}
+
+    for i in chpt['model']:
+        if i.split('.')[0]=='visual_encoder':
+            visual_encoder_dict[i[len('visual_encoder.'):]]=chpt['model'][i]
+        elif  i[:len('text_encoder.embeddings.')]=='text_encoder.embeddings.':
+            embeddings_dict[i[len('text_encoder.embeddings.'):]]=chpt['model'][i]
+
+    model = blip_decoder(pretrained='', image_size=384, vit='base')
+        
+    visual_encoder_dict['pos_embed'] = interpolate_pos_embed(visual_encoder_dict['pos_embed'],model.visual_encoder) 
+
+    model.visual_encoder.load_state_dict(visual_encoder_dict)
+    model.text_decoder.bert.embeddings.load_state_dict(embeddings_dict)
+
+    return model
+
+
 
 class TrainingModel(pl.LightningModule):
     def __init__(self,config=None):
@@ -12,7 +40,8 @@ class TrainingModel(pl.LightningModule):
         if config['load_checkpoint'] and config['checkpoint']:
             self.model = blip_decoder(pretrained=config['checkpoint']+'captioner_ckpt/captioner.pth', image_size=384, vit='base')
         else:
-            self.model = blip_decoder(pretrained=config['pretrained'], image_size=384, vit='base')
+            self.model = init_model_vit_and_embedding()
+            
         self.result = []
 
         self.config = config
