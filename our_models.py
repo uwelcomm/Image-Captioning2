@@ -1,5 +1,6 @@
 
 from models.blip import blip_decoder
+import torch
 import pytorch_lightning as pl
 import json
 
