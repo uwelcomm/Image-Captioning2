@@ -40,7 +40,7 @@ from models.blip import blip_decoder
 from models.vit import interpolate_pos_embed
 
 def init_model_vit_and_embedding(model=None):
-    download_url('https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth','')
+    download_url('https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth','./')
     chpt=torch.load('model_base_capfilt_large.pth',map_location='cpu')
     visual_encoder_dict={}
     embeddings_dict={}
