@@ -8,8 +8,10 @@ class TrainingModel(pl.LightningModule):
         super().__init__()
         if config==None:
             config=json.load(open('config.json','r'))
-        self.model = blip_decoder(pretrained=config['pretrained'], image_size=384, vit='base')
-#         self.model = blip_decoder(pretrained=config['pretrained'], image_size=384, vit='base')
+        if config['load_checkpoint'] and config['checkpoint']:
+            self.model = blip_decoder(pretrained=config['checkpoint']+'captioner_ckpt/captioner.pth', image_size=384, vit='base')
+        else:
+            self.model = blip_decoder(pretrained=config['pretrained'], image_size=384, vit='base')
         self.result = []
 
         self.config = config

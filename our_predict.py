@@ -19,7 +19,7 @@ model.eval()
 config=model.config
 # !pip install happytransformer
 from happytransformer import HappyTextToText, TTSettings
-happy_tt = HappyTextToText("T5", "/kaggle/input/bert-decoder-ckpt/happy_tt")
+happy_tt = HappyTextToText("T5", config['checkpoint']+'corrector_ckpt')
 
 
 args = TTSettings(num_beams=5, min_length=1)
