@@ -33,6 +33,35 @@ from data import create_dataset, create_sampler, create_loader
 from data.utils import save_result, coco_caption_eval
 from our_models import TrainingModel
 
+
+import torch 
+from torchvision.datasets.utils import download_url
+from models.blip import blip_decoder
+from models.vit import interpolate_pos_embed
+
+def init_model_vit_and_embedding(model=None):
+    download_url('https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth','')
+    chpt=torch.load('model_base_capfilt_large.pth',map_location='cpu')
+    visual_encoder_dict={}
+    embeddings_dict={}
+
+    for i in chpt['model']:
+        if i.split('.')[0]=='visual_encoder':
+            visual_encoder_dict[i[len('visual_encoder.'):]]=chpt['model'][i]
+        elif  i[:len('text_encoder.embeddings.')]=='text_encoder.embeddings.':
+            embeddings_dict[i[len('text_encoder.embeddings.'):]]=chpt['model'][i]
+
+    if not model:
+        model = blip_decoder(pretrained='', image_size=384, vit='base')
+        
+    visual_encoder_dict['pos_embed'] = interpolate_pos_embed(visual_encoder_dict['pos_embed'],model.visual_encoder) 
+
+    model.visual_encoder.load_state_dict(visual_encoder_dict)
+    model.text_decoder.bert.embeddings.load_state_dict(embeddings_dict)
+
+    return model
+
+
 class Args(dict):
     __setattr__ = dict.__setitem__
     __getattr__ = dict.__getitem__
@@ -73,7 +102,8 @@ if __name__=='__main__':
 # #     train_model = TrainingModel.load_from_checkpoint('checkpoints/model-epoch=04-val_loss=0.03.ckpt',config=config)
 
     train_model = TrainingModel(config)
-
+    cap_model=init_model_vit_and_embedding()
+    train_model.model=cap_model
     # training
 
     checkpoint_callback = ModelCheckpoint(
